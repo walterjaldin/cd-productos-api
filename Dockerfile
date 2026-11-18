@@ -27,6 +27,12 @@ ENV NODE_ENV=production \
 LABEL org.opencontainers.image.title="cd-productos-api" \
       org.opencontainers.image.version="${APP_VERSION}" \
       org.opencontainers.image.revision="${GIT_SHA}"
+# Hardening: parches del SO y eliminar npm/yarn/corepack (no se usan en runtime
+# y arrastran dependencias con CVEs detectadas por Docker Scout)
+RUN apk upgrade --no-cache \
+ && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+           /opt/yarn-* /usr/local/bin/yarn /usr/local/bin/yarnpkg
 WORKDIR /app
 COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/package.json ./

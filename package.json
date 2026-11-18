@@ -1,6 +1,6 @@
 {
   "name": "cd-productos-api",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "API CRUD de productos con CI/CD, Docker y despliegue en EC2",
   "main": "src/server.js",
   "scripts": {

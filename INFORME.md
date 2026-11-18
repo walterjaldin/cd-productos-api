@@ -1,17 +1,25 @@
 # Informe – Laboratorio 5.2: Pipeline de Despliegue Continuo con Docker
 
 **Estudiante:** Jaldin Gonzales Walter
+
+
 **Docente:** Ing. Lucio Marcelo Quispe
+
+
 **Materia:** Trabajando en la Nube (COM610)
+
+
 **Fecha:** 18 de noviembre de 2026
 
-| Entregable | Enlace |
-|---|---|
-| Repositorio | https://github.com/walterjaldin/cd-productos-api |
-| API en **production** (puerto 80) | http://32.199.159.225/health |
-| API en **staging** (puerto 8080) | http://32.199.159.225:8080/health |
-| Imagen en Docker Hub | https://hub.docker.com/r/walterjaldin/cd-productos-api |
-| Pipeline (Actions) | https://github.com/walterjaldin/cd-productos-api/actions |
+
+| Entregable                        | Enlace                                                                                                               |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Repositorio                       | [https://github.com/walterjaldin/cd-productos-api](https://github.com/walterjaldin/cd-productos-api)                 |
+| API en **production** (puerto 80) | [http://32.199.159.225/health](http://32.199.159.225/health)                                                         |
+| API en **staging** (puerto 8080)  | [http://32.199.159.225:8080/health](http://32.199.159.225:8080/health)                                               |
+| Imagen en Docker Hub              | [https://hub.docker.com/r/walterjaldin/cd-productos-api](https://hub.docker.com/r/walterjaldin/cd-productos-api)     |
+| Pipeline (Actions)                | [https://github.com/walterjaldin/cd-productos-api/actions](https://github.com/walterjaldin/cd-productos-api/actions) |
+
 
 ---
 
@@ -32,17 +40,19 @@ Se tomó la API CRUD de productos del Laboratorio 5.1 (Node.js 22 + Express 5, J
                                         Rollback manual (workflow_dispatch) ──► staging / production
 ```
 
-| Componente | Detalle |
-|---|---|
-| Aplicación | `src/app.js` (rutas), `src/productos.service.js` (lógica), `src/server.js` (arranque) |
-| Endpoint de salud | `GET /health` → `{ status, version, entorno, commit }` |
-| Imagen | `walterjaldin/cd-productos-api` en Docker Hub |
-| Servidor | EC2 `t3.micro` Ubuntu 24.04 (`lab52-cd-server`, us-east-1), Docker 29.10 |
-| Entornos | `staging` → contenedor `cd-api-staging` en `:8080` · `production` → `cd-api-prod` en `:80` |
-| Workflows | `.github/workflows/cd.yml` (pipeline) · `.github/workflows/rollback.yml` (rollback) |
-| Script de deploy | `scripts/deploy.sh` (health check + reemplazo + rollback automático) |
 
-`/health` devuelve versión, entorno y commit. Así se puede comprobar desde fuera qué versión está corriendo en cada entorno. Eso se usa en todo el informe como evidencia.
+| Componente        | Detalle                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| Aplicación        | `src/app.js` (rutas), `src/productos.service.js` (lógica), `src/server.js` (arranque)      |
+| Endpoint de salud | `GET /health` → `{ status, version, entorno, commit }`                                     |
+| Imagen            | `walterjaldin/cd-productos-api` en Docker Hub                                              |
+| Servidor          | EC2 `t3.micro` Ubuntu 24.04 (`lab52-cd-server`, us-east-1), Docker 29.10                   |
+| Entornos          | `staging` → contenedor `cd-api-staging` en `:8080` · `production` → `cd-api-prod` en `:80` |
+| Workflows         | `.github/workflows/cd.yml` (pipeline) · `.github/workflows/rollback.yml` (rollback)        |
+| Script de deploy  | `scripts/deploy.sh` (health check + reemplazo + rollback automático)                       |
+
+
+`/health` devuelve versión, entorno y commit. Así se puede comprobar desde fuera qué versión está corriendo en cada entorno. 
 
 ---
 
@@ -86,7 +96,7 @@ HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
 CMD ["node", "src/server.js"]
 ```
 
-**Decisiones técnicas:**
+
 
 - **Tres etapas en lugar de dos.**
   - `builder` instala *todas* las dependencias y ejecuta **lint y tests dentro del build**. Si fallan, la imagen no se genera.
@@ -95,7 +105,6 @@ CMD ["node", "src/server.js"]
 - **Usuario sin privilegios (`USER node`).** Docker Scout lo valida con la política *Default non-root user* ✓.
 - **`HEALTHCHECK` dentro de la imagen.** Docker marca el contenedor como `healthy` o `unhealthy`; se ve en `docker ps`.
 - **`APP_VERSION` y `GIT_SHA` como build-args.** Así cada imagen sabe qué versión y commit contiene.
-- **Hardening.** Ver la sección 5: lo agregué en la v1.1.0 a partir del resultado del escaneo.
 
 `.dockerignore` excluye `node_modules`, `coverage`, `.git`, `.github`, `.env`, `img`, `*.md`, `scripts` y el propio Dockerfile. Así el contexto de build pesa solo unos cientos de bytes.
 
@@ -128,6 +137,7 @@ El contenedor aparece como **`(healthy)`**, `/health` responde `{"status":"ok",.
 ### 3.1 Servidor EC2
 
 Creé la instancia desde **AWS CloudShell** con AWS CLI:
+
 - **Security group** `lab52-cd-sg`: puertos 22 (SSH), 80 (production) y 8080 (staging).
 - **AMI** Ubuntu 24.04 obtenida del parámetro SSM oficial de Canonical.
 - **User data** que instala Docker y crea un usuario dedicado para staging.
@@ -152,12 +162,14 @@ chmod 700 /home/stg-deployer/.ssh && chmod 600 /home/stg-deployer/.ssh/authorize
 
 ### 3.2 Un usuario y una llave SSH por entorno
 
-Generé dos pares de llaves **ed25519** localmente; ninguna se sube al repositorio:
+Generé dos pares de llaves **ed25519** localmente:
 
-| Entorno | Usuario Linux | Llave | Cómo se instaló |
-|---|---|---|---|
-| production | `ubuntu` | `production_ed25519` | Importada en EC2 como *key pair* `lab52-production` |
-| staging | `stg-deployer` | `staging_deploy_ed25519` | Escrita en `authorized_keys` por el user data |
+
+| Entorno    | Usuario Linux  | Llave                    | Cómo se instaló                                     |
+| ---------- | -------------- | ------------------------ | --------------------------------------------------- |
+| production | `ubuntu`       | `production_ed25519`     | Importada en EC2 como *key pair* `lab52-production` |
+| staging    | `stg-deployer` | `staging_deploy_ed25519` | Escrita en `authorized_keys` por el user data       |
+
 
 ![Cada entorno se conecta con su propio usuario y llave](img/05-ec2-ssh-usuarios.png)
 
@@ -167,32 +179,30 @@ Así, aunque ambos entornos comparten servidor, **una llave filtrada de staging 
 
 **A nivel de repositorio** (compartidos por todo el pipeline):
 
-| Tipo | Nombre | Valor |
-|---|---|---|
-| Secret | `DOCKER_USERNAME` | Usuario de Docker Hub |
-| Secret | `DOCKER_PASSWORD` | **Access Token** de Docker Hub (Read & Write), no la contraseña |
-| Variable | `IMAGE_NAME` | `walterjaldin/cd-productos-api` |
 
-**A nivel de environment** (en **Settings > Environments**):
+| Tipo     | Nombre            | Valor                                                               |
+| -------- | ----------------- | ------------------------------------------------------------------- |
+| Secret   | `DOCKER_USERNAME` | Usuario de Docker Hub                                               |
+| Secret   | `DOCKER_PASSWORD` | **Access Token** de Docker Hub (Read &amp; Write), no la contraseña |
+| Variable | `IMAGE_NAME`      | `walterjaldin/cd-productos-api`                                     |
 
-| | `staging` | `production` |
-|---|---|---|
-| Secret `SSH_HOST` | IP de la EC2 | IP de la EC2 |
-| Secret `SSH_USER` | `stg-deployer` | `ubuntu` |
-| Secret `SSH_PRIVATE_KEY` | llave de staging | llave de production |
-| Variable `APP_PORT` | `8080` | `80` |
-| Variable `CHECK_PORT` | `9081` | `9080` |
-| Variable `CONTAINER_NAME` | `cd-api-staging` | `cd-api-prod` |
-| Variable `PUBLIC_HOST` | DNS público de la EC2 | DNS público de la EC2 |
-| **Regla de protección** | ninguna (deploy automático) | **Required reviewers** (aprobación manual) |
+
+**A nivel de environment** (en **Settings &gt; Environments**):
+
+
+|                           | `staging`                   | `production`                               |
+| ------------------------- | --------------------------- | ------------------------------------------ |
+| Secret `SSH_HOST`         | IP de la EC2                | IP de la EC2                               |
+| Secret `SSH_USER`         | `stg-deployer`              | `ubuntu`                                   |
+| Secret `SSH_PRIVATE_KEY`  | llave de staging            | llave de production                        |
+| Variable `APP_PORT`       | `8080`                      | `80`                                       |
+| Variable `CHECK_PORT`     | `9081`                      | `9080`                                     |
+| Variable `CONTAINER_NAME` | `cd-api-staging`            | `cd-api-prod`                              |
+| Variable `PUBLIC_HOST`    | DNS público de la EC2       | DNS público de la EC2                      |
+| **Regla de protección**   | ninguna (deploy automático) | **Required reviewers** (aprobación manual) |
+
 
 ![Secretos, variables y entornos configurados](img/03-github-secretos-entornos.png)
-
-> **Problemas que encontré con el enmascaramiento de secretos:**
-> 1. Al principio el usuario de staging se llamaba `staging`. Como ese valor era el secret `SSH_USER`, GitHub reemplazaba la palabra "staging" por `***` en **todos** los logs. Renombré el usuario a `stg-deployer`.
-> 2. `PUBLIC_HOST` tenía la IP, que es igual al secret `SSH_HOST`. Por eso GitHub omitía la URL del environment ("may contain secret"). Ahora uso el DNS público `ec2-32-199-159-225.compute-1.amazonaws.com`.
-
----
 
 ## 4. El workflow de CD (`.github/workflows/cd.yml`)
 
@@ -209,21 +219,25 @@ on:
     paths-ignore: ['**.md', 'img/**']
 ```
 
-| Evento | Qué hace |
-|---|---|
-| Push a `main` | Pipeline completo: CI → imagen → staging → production con aprobación |
-| Tag `v*.*.*` | Lo mismo, y además publica tags semánticos (`1.1.0`, `1.1`) |
-| Pull request | CI, build y escaneo (Scout comenta en el PR); **no** hace push ni despliega |
-| Cambios solo en `*.md` o `img/` | No dispara el pipeline |
+
+| Evento                          | Qué hace                                                                    |
+| ------------------------------- | --------------------------------------------------------------------------- |
+| Push a `main`                   | Pipeline completo: CI → imagen → staging → production con aprobación        |
+| Tag `v*.*.*`                    | Lo mismo, y además publica tags semánticos (`1.1.0`, `1.1`)                 |
+| Pull request                    | CI, build y escaneo (Scout comenta en el PR); **no** hace push ni despliega |
+| Cambios solo en `*.md` o `img/` | No dispara el pipeline                                                      |
+
 
 ### 4.2 Jobs
 
-| Job | `needs` | Qué hace |
-|---|---|---|
-| `test` – Lint y pruebas | – | `npm ci`, `npm run lint`, `npm test` |
-| `build-and-push` – Build, scan y push | `test` | Buildx → build con `load: true` → **Docker Scout** → SARIF a GitHub Security → push a Docker Hub |
-| `deploy-staging` | `build-and-push` | `environment: staging`; SSH con `appleboy/ssh-action` ejecuta `scripts/deploy.sh` |
-| `deploy-production` | `deploy-staging` | `environment: production`; **se pausa hasta que un revisor aprueba** |
+
+| Job                                   | `needs`          | Qué hace                                                                                         |
+| ------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------ |
+| `test` – Lint y pruebas               | –                | `npm ci`, `npm run lint`, `npm test`                                                             |
+| `build-and-push` – Build, scan y push | `test`           | Buildx → build con `load: true` → **Docker Scout** → SARIF a GitHub Security → push a Docker Hub |
+| `deploy-staging`                      | `build-and-push` | `environment: staging`; SSH con `appleboy/ssh-action` ejecuta `scripts/deploy.sh`                |
+| `deploy-production`                   | `deploy-staging` | `environment: production`; **se pausa hasta que un revisor aprueba**                             |
+
 
 Fragmento del job de build:
 
@@ -298,9 +312,7 @@ deploy-production:
         script_path: scripts/deploy.sh
 ```
 
-**Decisiones técnicas:**
-
-- **Se despliega por SHA, no por `latest`.** `latest` cambia con cada push, *incluso cuando la imagen está rota* (ver sección 7). Desplegar `IMAGE:${{ github.sha }}` garantiza que staging y production corren exactamente la imagen que se construyó y escaneó en ese run.
+- **Se despliega por SHA, no por `latest`.** `latest` cambia con cada push, *incluso cuando la imagen está rota* . Desplegar `IMAGE:${{ github.sha }}` garantiza que staging y production corren exactamente la imagen que se construyó y escaneó en ese run.
 - **Se escanea antes de publicar.** La imagen se construye con `load: true`, se escanea en el runner y recién después se sube. El segundo `build-push-action` reutiliza la caché (`type=gha`), así que no reconstruye nada.
 - **El script de deploy está en el repositorio** (`script_path`) y no embebido en el YAML. Así es versionable, reutilizable por el workflow de rollback y se puede probar a mano.
 - **Docker Scout en lugar de `aquasecurity/trivy-action@master`.** La guía sugería cualquiera de los dos. En marzo de 2026 los tags de `trivy-action` fueron comprometidos en un ataque a la cadena de suministro, y `@master` apunta a una rama mutable. Elegí la acción oficial de Docker, que además ya usa la misma cuenta de Docker Hub.
@@ -323,34 +335,33 @@ deploy-production:
 
 El primer escaneo de la imagen encontró **1 crítica y 15 altas** con corrección disponible, en 275 paquetes:
 
-| Paquete | Origen | C | H |
-|---|---|---|---|
-| `zlib 1.3.2-r1` | Alpine (SO base) | 1 | 0 |
-| `openssl 3.5.9-r0` | Alpine (SO base) | 0 | 4 |
-| `musl 1.2.6-r3` | Alpine (SO base) | 0 | 1 |
-| `brace-expansion`, `pacote` (×2), `picomatch`, `ip-address`, `sigstore` | **npm incluido en la imagen `node`** | 0 | 10 |
+
+| Paquete                                                                 | Origen                               | C   | H   |
+| ----------------------------------------------------------------------- | ------------------------------------ | --- | --- |
+| `zlib 1.3.2-r1`                                                         | Alpine (SO base)                     | 1   | 0   |
+| `openssl 3.5.9-r0`                                                      | Alpine (SO base)                     | 0   | 4   |
+| `musl 1.2.6-r3`                                                         | Alpine (SO base)                     | 0   | 1   |
+| `brace-expansion`, `pacote` (×2), `picomatch`, `ip-address`, `sigstore` | **npm incluido en la imagen `node`** | 0   | 10  |
+
 
 **Ninguna** vulnerabilidad venía del código de la aplicación ni de sus dependencias (`express`). Todas vienen de la imagen base: del sistema operativo o de **npm**, que viene preinstalado en `node:22-alpine` pero no se usa en tiempo de ejecución.
 
 ### 5.2 Remediación: v1.1.0
 
 Agregué al stage `runtime` dos cambios:
+
 - `apk upgrade --no-cache`, que trae los parches de Alpine disponibles (corrige `zlib`).
 - Eliminación de npm, npx, corepack y yarn de la imagen final.
 
 ![Docker Scout antes y después del hardening](img/12-scout-antes-despues.png)
 
-| | v1.0.0 | v1.1.0 |
-|---|---|---|
-| Críticas | **1** | **0** |
-| Altas | 15 | 5 |
-| Paquetes en la imagen | 275 | 91 |
 
-Las 5 altas restantes (`openssl 3.5.9-r0` y `musl 1.2.6-r3`) **no se pueden corregir todavía**. Lo verifiqué con `apk policy` dentro del contenedor: el repositorio `alpine/v3.24/main` solo publica esas versiones, y las corregidas (`3.5.9-r1` y `1.2.6-r6`) aún no existen. Queda como **riesgo residual aceptado**. Se resolverá solo en un futuro build, porque cada push reconstruye la imagen y vuelve a ejecutar `apk upgrade`.
+|                       | v1.0.0 | v1.1.0 |
+| --------------------- | ------ | ------ |
+| Críticas              | **1**  | **0**  |
+| Altas                 | 15     | 5      |
+| Paquetes en la imagen | 275    | 91     |
 
-El reporte también se sube en formato **SARIF** a la pestaña *Security > Code scanning* del repositorio.
-
-Configuré `exit-code: false` para que el escaneo **informe pero no bloquee**, como pide la guía (`exit-code: '0'`). En un proyecto real, ahora que la imagen tiene 0 críticas, se podría endurecer: `only-severities: critical` con `exit-code: true` haría fallar el pipeline si aparece una nueva crítica.
 
 ---
 
@@ -360,16 +371,18 @@ Configuré `exit-code: false` para que el escaneo **informe pero no bloquee**, c
 
 ![Historial de ejecuciones en GitHub Actions](img/06-actions-historial.png)
 
-| # | Commit | Resultado | Qué demuestra |
-|---|---|---|---|
-| 1 | `90d5201` | ❌ | Primer intento: `IMAGE` llegaba vacío al deploy (*invalid reference format*). Un `outputs` del job usaba `vars` y se resolvía vacío; lo corregí construyendo el nombre directamente en cada job de deploy. |
-| 2 | `0116340` | ✅ | Primer despliegue completo (v1.0.0) en staging y production |
-| 3 | `344e0e7` | ✅ | v1.1.0 (hardening): cambio visible desplegado |
-| 4 | tag `v1.1.0` | ✅ | Release semántico: publica `1.1.0` y `1.1` |
-| 5 | `49e3f6f` | ❌ | Simulación de fallo: el health check detiene el deploy |
-| 6 | `9fbe86e` | ✅ | Corrección con `git revert` |
-| – | Rollback manual #1 | ✅ | Rollback de production a v1.0.0 |
-| 7 | `a65a181` | ✅ | Versión final |
+
+| #   | Commit             | Resultado | Qué demuestra                                                                                                                                                                                              |
+| --- | ------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `90d5201`          | ❌         | Primer intento: `IMAGE` llegaba vacío al deploy (*invalid reference format*). Un `outputs` del job usaba `vars` y se resolvía vacío; lo corregí construyendo el nombre directamente en cada job de deploy. |
+| 2   | `0116340`          | ✅         | Primer despliegue completo (v1.0.0) en staging y production                                                                                                                                                |
+| 3   | `344e0e7`          | ✅         | v1.1.0 (hardening): cambio visible desplegado                                                                                                                                                              |
+| 4   | tag `v1.1.0`       | ✅         | Release semántico: publica `1.1.0` y `1.1`                                                                                                                                                                 |
+| 5   | `49e3f6f`          | ❌         | Simulación de fallo: el health check detiene el deploy                                                                                                                                                     |
+| 6   | `9fbe86e`          | ✅         | Corrección con `git revert`                                                                                                                                                                                |
+| –   | Rollback manual #1 | ✅         | Rollback de production a v1.0.0                                                                                                                                                                            |
+| 7   | `a65a181`          | ✅         | Versión final                                                                                                                                                                                              |
+
 
 ### 6.2 Pipeline pausado esperando aprobación
 
@@ -397,12 +410,14 @@ Log del script en ambos entornos: pull de la imagen por SHA, health check exitos
 
 Cada build publica varios tags que apuntan al **mismo digest**:
 
-| Tag | Uso |
-|---|---|
-| `01163405ebb9…` (SHA completo) | Lo que despliega el pipeline; inmutable y trazable al commit |
-| `sha-0116340` | Versión corta y legible del SHA, cómoda para rollbacks manuales |
-| `1.1.0`, `1.1` | Versionado semántico (solo cuando se publica un tag `v*.*.*`) |
-| `latest` | Último build de `main`, como referencia; **no** se usa para desplegar |
+
+| Tag                            | Uso                                                                   |
+| ------------------------------ | --------------------------------------------------------------------- |
+| `01163405ebb9…` (SHA completo) | Lo que despliega el pipeline; inmutable y trazable al commit          |
+| `sha-0116340`                  | Versión corta y legible del SHA, cómoda para rollbacks manuales       |
+| `1.1.0`, `1.1`                 | Versionado semántico (solo cuando se publica un tag `v*.*.*`)         |
+| `latest`                       | Último build de `main`, como referencia; **no** se usa para desplegar |
+
 
 ![Tags publicados en Docker Hub](img/14-dockerhub-tags.png)
 
@@ -442,13 +457,12 @@ El script levantó la imagen nueva en el puerto de validación, hizo 10 intentos
 ![Log del health check fallido y versión anterior intacta](img/16-log-health-check-fallido.png)
 
 **Resultado:**
+
 - `Deploy a staging` ❌. El contenedor de staging no se reemplazó y siguió sirviendo la v1.1.0 (`344e0e7`).
 - `Deploy a production` se **omitió** (*skipped*) porque depende de staging. Production nunca estuvo en riesgo.
 - Los usuarios no notaron nada: ambos entornos siguieron respondiendo `200 OK`.
 
 Lo corregí con `git revert` (commit `9fbe86e`) y el pipeline siguiente volvió a desplegar sin problemas.
-
-> **Lección:** la imagen rota llegó a Docker Hub como `latest`. Si el deploy usara `latest`, cualquier `docker pull` manual habría bajado la versión defectuosa. Por eso el pipeline despliega siempre por SHA, y `latest` es solo informativo.
 
 ---
 
@@ -466,7 +480,7 @@ Implementé y probé **tres** formas.
 gh workflow run rollback.yml -f environment=production -f tag=01163405ebb970ebc99ac33a52eb81a232a3df2c
 ```
 
-También se puede lanzar desde **Actions > Rollback manual > Run workflow**. Así revertí production de la v1.1.0 a la **v1.0.0**:
+También se puede lanzar desde **Actions &gt; Rollback manual &gt; Run workflow**. Así revertí production de la v1.1.0 a la **v1.0.0**:
 
 ![Workflow de rollback ejecutado](img/17-workflow-rollback.png)
 
@@ -495,39 +509,7 @@ Staging pasó de `1.1.0 / 9fbe86e` a `1.0.0 / 0116340`. Para production, los com
 
 Si la nueva versión pasa el health check en el puerto de validación pero **no responde en el puerto público** después del reemplazo, `deploy.sh` vuelve a levantar la imagen anterior sin intervención humana.
 
-### 9.4 Cómo encontrar el SHA o la versión a la que volver
 
-- `git log --oneline`: cada commit corresponde a una imagen `sha-<7 caracteres>`.
-- Pestaña **Tags** de Docker Hub, o `GET /health` de la versión actual.
-- `~/.<contenedor>.previous` en el servidor.
-- Para releases, el tag semántico (`walterjaldin/cd-productos-api:1.1.0`).
-
-> El rollback es la red de seguridad, no la solución. Después hay que corregir el código con un nuevo commit (o un `git revert`) para que `main` vuelva a coincidir con lo que corre en producción. Así lo hice tras el rollback: el commit `a65a181` dejó ambos entornos de nuevo en la versión vigente.
 
 ---
 
-## 10. Reflexión: contenedores y despliegue continuo en un proyecto real
-
-**Ventajas de los contenedores**
-
-- **"Funciona en mi máquina" deja de ser un problema.** La misma imagen que probé localmente (`docker run`) es la que corre en EC2, con las mismas versiones de Node, Alpine y dependencias. El servidor solo necesita Docker; no hubo que instalar Node ni configurar nada de la app en la EC2.
-- **Inmutabilidad y trazabilidad.** Cada imagen tiene un digest y está atada a un commit. `/health` dice exactamente qué commit está corriendo, y `docker ps` muestra la imagen exacta.
-- **Aislamiento.** Staging y production corren en el mismo servidor sin interferir, cada uno en su contenedor y su puerto, con su propio usuario SSH.
-- **Rollback barato.** Volver atrás es levantar otra imagen que ya existe. Sin contenedores habría que reinstalar dependencias, recompilar y rezar.
-- **La seguridad se puede medir.** El escaneo mostró que el riesgo real no estaba en mi código sino en la imagen base. Con dos líneas en el Dockerfile bajé de 1 crítica y 15 altas a 0 y 5, y de 275 a 91 paquetes.
-
-**Ventajas del despliegue continuo**
-
-- **Cada cambio llega a producción con el mismo proceso, probado cientos de veces.** No hay pasos manuales que se puedan olvidar. Ninguno de los despliegues hechos por el pipeline requirió entrar al servidor; solo entré por SSH para demostrar el rollback manual.
-- **Los errores se detectan antes de que lleguen a los usuarios.** El bug del puerto pasó lint, tests, build y escaneo, pero lo detuvo el health check en staging. Production ni se enteró.
-- **Staging + aprobación manual = confianza.** Se valida la versión en un entorno idéntico a producción y una persona decide cuándo promoverla. Queda registrado quién aprobó, cuándo y con qué comentario.
-- **Secretos fuera del código.** Credenciales de Docker Hub y llaves SSH viven en GitHub Secrets, separadas por entorno, y nunca aparecen en los logs.
-- **Ciclos más cortos.** Del `git push` a production pasan unos 2–3 minutos más la aprobación. Esto incentiva cambios pequeños, que son más fáciles de revisar y de revertir.
-
-**Qué mejoraría para producción real**
-
-- Tener staging y production en **instancias separadas** (o en ECS/EKS) para que un problema de recursos en staging no afecte a producción.
-- Poner HTTPS con un dominio propio y un balanceador (ALB), en lugar de exponer el puerto 80 directamente.
-- Restringir SSH (puerto 22) a los rangos IP de GitHub Actions o, mejor, usar **AWS SSM Session Manager** o **OIDC** para no depender de llaves SSH de larga duración.
-- Hacer que el escaneo **bloquee** el pipeline ante vulnerabilidades críticas nuevas y firmar las imágenes (provenance/SBOM).
-- Usar despliegues **blue-green** con dos contenedores detrás de un proxy (Nginx o Traefik) para tener cero segundos de corte durante el reemplazo.

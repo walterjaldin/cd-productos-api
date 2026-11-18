@@ -1,0 +1,41 @@
+name: Rollback manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Entorno a revertir'
+        required: true
+        type: choice
+        options: [staging, production]
+      tag:
+        description: 'Tag de la imagen a restaurar (SHA del commit o version, ej. 1.0.0)'
+        required: true
+        type: string
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  rollback:
+    name: Rollback de ${{ inputs.environment }} a ${{ inputs.tag }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout (script de despliegue)
+        uses: actions/checkout@v6
+
+      - name: Redesplegar version anterior
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          IMAGE: ${{ vars.IMAGE_NAME }}:${{ inputs.tag }}
+          CONTAINER: ${{ vars.CONTAINER_NAME }}
+          PUBLIC_PORT: ${{ vars.APP_PORT }}
+          CHECK_PORT: ${{ vars.CHECK_PORT }}
+          APP_ENV: ${{ inputs.environment }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: IMAGE,CONTAINER,PUBLIC_PORT,CHECK_PORT,APP_ENV
+          script_path: scripts/deploy.sh

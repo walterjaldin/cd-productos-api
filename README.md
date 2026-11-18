@@ -30,3 +30,17 @@ npm ci
 npm test
 npm start
 ```
+
+## Pipeline de CI/CD
+
+`git push` → **Lint y pruebas** → **Build multi-stage + escaneo Docker Scout + push a Docker Hub** → **Deploy a staging** (EC2 :8080) → **Deploy a production** (EC2 :80, con aprobación manual).
+
+- API en producción: http://32.199.159.225/health
+- API en staging: http://32.199.159.225:8080/health
+- Imagen: https://hub.docker.com/r/walterjaldin/cd-productos-api
+
+## Documentación del Laboratorio
+
+Puedes encontrar el informe completo con capturas de pantalla y evidencias en el siguiente enlace:
+
+- [Ver informe del laboratorio](./INFORME.md)

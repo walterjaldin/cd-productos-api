@@ -43,8 +43,6 @@ jobs:
       contents: read
       security-events: write
       pull-requests: write
-    outputs:
-      image: ${{ vars.IMAGE_NAME }}:${{ github.sha }}
     steps:
       - name: Checkout del codigo
         uses: actions/checkout@v6
@@ -151,7 +149,7 @@ jobs:
       - name: Desplegar en staging via SSH
         uses: appleboy/ssh-action@v1.2.0
         env:
-          IMAGE: ${{ needs.build-and-push.outputs.image }}
+          IMAGE: ${{ vars.IMAGE_NAME }}:${{ github.sha }}
           CONTAINER: ${{ vars.CONTAINER_NAME }}
           PUBLIC_PORT: ${{ vars.APP_PORT }}
           CHECK_PORT: ${{ vars.CHECK_PORT }}
@@ -181,7 +179,7 @@ jobs:
       - name: Desplegar en produccion via SSH
         uses: appleboy/ssh-action@v1.2.0
         env:
-          IMAGE: ${{ needs.build-and-push.outputs.image }}
+          IMAGE: ${{ vars.IMAGE_NAME }}:${{ github.sha }}
           CONTAINER: ${{ vars.CONTAINER_NAME }}
           PUBLIC_PORT: ${{ vars.APP_PORT }}
           CHECK_PORT: ${{ vars.CHECK_PORT }}
